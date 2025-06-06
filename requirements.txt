@@ -1,0 +1,4 @@
+torch
+scikit-learn==1.0.2
+minisom==2.3.1
+tqdm

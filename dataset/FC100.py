@@ -5,7 +5,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 import numpy as np
-ROOT_PATH = '/home/rugu/PycharmProjects/FC100/'
+ROOT_PATH = '/data/fewshotData/PycharmProjects/FC100/'
 
 class FC100(Dataset):
 

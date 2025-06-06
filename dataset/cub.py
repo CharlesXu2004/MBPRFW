@@ -1,31 +1,28 @@
 import os.path as osp
-
-import numpy as np
 from PIL import Image
 
 from torch.utils.data import Dataset
 from torchvision import transforms
+import numpy as np
 
-ROOT_PATH = 'D:/PycharmProjects/few-shot/split/'
-ROOT_PATH_Image = 'D:/PycharmProjects/'
+ROOT_PATH = '/data/fewshotData/PycharmProjects/CUB_200_2011/'
+ROOT_PATH_Image = '/data/fewshotData/PycharmProjects/'
 
+class CUB(Dataset):
 
-
-class MiniImageNet(Dataset):
-    def __init__(self, setname, image_size, aug, transform = None):
+    def __init__(self, setname, image_size, aug, transform=None):
         csv_path = osp.join(ROOT_PATH, setname + '.csv')
         lines = [x.strip() for x in open(csv_path, 'r').readlines()][1:]
         self.setname = setname
         data = []
         label = []
-        label_eq = []
         lb = -1
 
         self.wnids = []
 
         for l in lines:
             name, wnid = l.split(',')
-            path = osp.join(ROOT_PATH_Image, 'images', name)
+            path = osp.join(ROOT_PATH_Image, name)
             if wnid not in self.wnids:
                 self.wnids.append(wnid)
                 lb += 1
@@ -58,7 +55,7 @@ class MiniImageNet(Dataset):
                     transforms.ToTensor(),
                     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
-                    ])
+                ])
             else:
                 self.transform = transforms.Compose([
                     # transforms.Resize(84),
@@ -67,13 +64,13 @@ class MiniImageNet(Dataset):
                     transforms.CenterCrop(self.image_size),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                          std=[0.229, 0.224, 0.225])
+                                         std=[0.229, 0.224, 0.225])
                 ])
                 self.transform_test = transforms.Compose([
                     # transforms.Resize(84),
                     transforms.Resize(92),
                     # transforms.Resize(self.image_size),
-                    transforms.CenterCrop(84),
+                    transforms.CenterCrop(self.image_size),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                          std=[0.229, 0.224, 0.225])
@@ -82,25 +79,21 @@ class MiniImageNet(Dataset):
     def __len__(self):
         return len(self.data)
 
-
     def __getitem__(self, i):
         path, label = self.data[i], self.label[i]
         if self.aug:
-            if self.setname == "train":
-                image = self.transform_0(Image.open(path).convert('RGB'))
-                image_1 = transforms.RandomResizedCrop(self.image_size)(Image.open(path).convert('RGB'))
-                image_1 = transforms.functional.resized_crop(image_1, np.random.randint(28), np.random.randint(28), 56, 56, (84, 84))
-                image_1 = self.transform_1(image_1)
-                return image,image_1,label
-            else:
-                image = self.transform(Image.open(path).convert('RGB'))
-                return image, label
+            image = self.transform_0(Image.open(path).convert('RGB'))
+            image_1 = transforms.RandomResizedCrop(self.image_size)(Image.open(path).convert('RGB'))
+            image_1 = transforms.functional.resized_crop(image_1, np.random.randint(28), np.random.randint(28), 56, 56, (84, 84))
+            image_1 = self.transform_1(image_1)
+            return image,image_1,label
         else:
-            if self.setname == "train":
+            if self.setname == "train" or self.setname == 'val':
                 image = self.transform(Image.open(path).convert('RGB'))
             else:
                 image = self.transform_test(Image.open(path).convert('RGB'))
             return image, label
+
 # if __name__ == '__main__':
-#     trainset = MiniImageNet('train', 84, True)
+#     trainset = CUB('test', 84, True)
 #     print(len(trainset))

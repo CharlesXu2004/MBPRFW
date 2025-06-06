@@ -1,43 +1,41 @@
 import os.path as osp
 from PIL import Image
+import os
 
 from torch.utils.data import Dataset
 from torchvision import transforms
 import numpy as np
 
-# ROOT_PATH = '/home/rugu/PycharmProjects/CUB_200_2011/'
-# ROOT_PATH_Image = '/home/rugu/PycharmProjects/'
-# ROOT_PATH = '/data/fewshotData/PycharmProjects/CUB_200_2011/'
-# ROOT_PATH_Image ='/data/fewshotData/PycharmProjects/'
-ROOT_PATH = 'D:/PycharmProjects/CUB_200_2011/'
-ROOT_PATH_Image ='D:/PycharmProjects/'
 
-class CUB(Dataset):
+ROOT_PATH = '/data/fewshotData/PycharmProjects/CIFAR-FS/cifar100/data/'
+Split_PATH = '/data/fewshotData/PycharmProjects/CIFAR-FS/cifar100/splits/bertinetto/'
+
+
+class CIFAR(Dataset):
 
     def __init__(self, setname, image_size, aug, transform=None):
-        csv_path = osp.join(ROOT_PATH, setname + '.csv')
-        lines = [x.strip() for x in open(csv_path, 'r').readlines()][1:]
-        self.setname = setname
+        csv_path = osp.join(Split_PATH, setname + '.txt')
+        lines = [x.strip() for x in open(csv_path, 'r').readlines()][:]
+
         data = []
         label = []
-        lb = -1
-
-        self.wnids = []
+        lb = 0
+        self.setname = setname
 
         for l in lines:
-            name, wnid = l.split(',')
-            path = osp.join('D:/PycharmProjects/', name)
-            if wnid not in self.wnids:
-                self.wnids.append(wnid)
-                lb += 1
-            data.append(path)
-            label.append(lb)
+            temp_path = osp.join(ROOT_PATH,l)
+            for name in os.listdir(temp_path):
+                path = osp.join(temp_path, name)
+                data.append(path)
+                label.append(lb)
+            lb +=1
+
 
         self.data = data
         self.label = label
         self.image_size = image_size
         self.aug = aug
-        self.num_classes = len(self.wnids)
+        self.num_classes = lb
         # jitter_param = dict(Brightness=0.4, Contrast=0.4, Color=0.4)
 
         # transform_list = ['RandomSizedCrop', 'ImageJitter', 'RandomHorizontalFlip', 'ToTensor', 'Normalize']
@@ -86,17 +84,22 @@ class CUB(Dataset):
     def __getitem__(self, i):
         path, label = self.data[i], self.label[i]
         if self.aug:
-            image = self.transform_0(Image.open(path).convert('RGB'))
+            image_0 = self.transform_0(Image.open(path).convert('RGB'))
             image_1 = transforms.RandomResizedCrop(self.image_size)(Image.open(path).convert('RGB'))
-            image_1 = transforms.functional.resized_crop(image_1, np.random.randint(28), np.random.randint(28), 56, 56, (84, 84))
+            image_1 = transforms.functional.resized_crop(image_1, np.random.randint(28), np.random.randint(28), 56, 56,(84,84))
             image_1 = self.transform_1(image_1)
-            return image,image_1,label
+            #return image_0,image_1,label
+            return image_0,image_1, label
         else:
-            if self.setname == "train" or self.setname == 'val':
+            if self.setname == 'train' or self.setname == 'val':
                 image = self.transform(Image.open(path).convert('RGB'))
             else:
                 image = self.transform_test(Image.open(path).convert('RGB'))
-            return image, label
+            return image,label
+    # def __getitem__(self, i):
+    #     path, label = self.data[i], self.label[i]
+    #     image = self.transform(Image.open(path).convert('RGB'))
+    #     return image, label
 
 # if __name__ == '__main__':
 #     trainset = CUB('test', 84, True)

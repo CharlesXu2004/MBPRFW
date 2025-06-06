@@ -20,6 +20,7 @@ class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
 
+
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,padding=1, bias=False)
@@ -181,20 +182,20 @@ class ResNet12(nn.Module):
 
 
         return x
+
+
 class overall_model(nn.Module):
     def __init__(self):
         super().__init__()
         self.backbone = ResNet12()
         self.final_dim = self.backbone.final_feat_dim
-        a = np.eye(640, dtype=float)
-        a = torch.from_numpy(np.float32(a))
 
         self.train_w = nn.Sequential(
             nn.Linear(self.final_dim, self.final_dim),
             #nn.BatchNorm2d(self.final_dim)
             #nn.BatchNorm1d(self.final_dim, eps=0.001, momentum=0.1, affine=True)
         )
-        self.train_w[0].weight.data = a
+        self.train_w[0].weight.data = torch.from_numpy(np.eye(640, dtype=np.float32))
 
 
     def forward(self,x1,x2):
@@ -204,8 +205,8 @@ class overall_model(nn.Module):
         feature2_w = self.train_w(x2)
 
         return feature1_w,feature2_w
-    def evaluate(self, data_query, data_shot, label,n,BN):
 
+    def evaluate(self, data_query, data_shot, label,n,BN):
 
         if n == 5:
             data_shot = data_shot.reshape(5, 5, 640)
@@ -219,20 +220,19 @@ class overall_model(nn.Module):
         acc = (pred == label).type(torch.cuda.FloatTensor).mean().item()
         return acc
 
+
 class overall_model_som(nn.Module):
     def __init__(self):
         super().__init__()
         self.backbone = ResNet12()
         self.final_dim = self.backbone.final_feat_dim
-        a = np.eye(640, dtype=float)
-        a = torch.from_numpy(np.float32(a))
 
         self.train_w = nn.Sequential(
             nn.Linear(self.final_dim, self.final_dim),
             # nn.BatchNorm2d(self.final_dim)
             # nn.BatchNorm1d(self.final_dim, eps=0.001, momentum=0.1, affine=True)
         )
-        self.train_w[0].weight.data = a
+        self.train_w[0].weight.data = torch.from_numpy(np.eye(640, dtype=np.float32))
 
     def forward(self, x1, x2):
         # feature1 = self.backbone(x1)
@@ -243,8 +243,6 @@ class overall_model_som(nn.Module):
         return feature1_w, feature2_w
 
 
-
 if __name__ == '__main__':
     net = ResNet12()
     print(net)
-
